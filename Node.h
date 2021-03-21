@@ -1,29 +1,34 @@
 #pragma once
 using namespace std;
 
-#include "Node.h"
+#include "NodeInterface.h"
+#include <iostream>
 
 class Node : public NodeInterface
 {
 private:
 	int data;
-	int height;
+	int height = 1;
 
-	Node* leftChild = NULL;
-	Node* rightChild = NULL;
+	Node* left = nullptr;
+	Node* right = nullptr;
+
+	int getLeftHeight() const;
+
+	int getRightHeight() const;
+
+	int getBalance() const;
+
+	void recalculateHeight();
 public:
-	Node(int _data)
-	{
-		data = _data;
-		height = 1;
-	}
+	Node(int _data) : data(_data) {}
 	~Node() {}
 
 	int getData() const { return data; }
 
-	Node* getLeftChild() const { return leftChild; }
+	Node* getLeftChild() const { return left; }
 
-	Node* getRightChild() const { return rightChild; }
+	Node* getRightChild() const { return right; }
 
 	int getHeight() { return height; }
 

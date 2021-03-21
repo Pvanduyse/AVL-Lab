@@ -7,7 +7,7 @@
 
 CXX = g++
 CXXFLAGS = -std=c++11 -g -Wall
-SRCS = main.cpp #AVL.cpp Node.cpp
+SRCS = main.cpp AVL.cpp Node.cpp
 OBJS = $(SRCS:.cpp=.o)
 MAIN = Lab7_AVL
 
@@ -41,3 +41,5 @@ depend: $(SRCS)
 # DO NOT DELETE
 
 main.o: AVL.h AVLInterface.h NodeInterface.h Node.h
+AVL.o: AVL.h AVLInterface.h NodeInterface.h Node.h
+Node.o: Node.h NodeInterface.h
