@@ -2,197 +2,185 @@
 
 /*
  * AVL::rebalance() implementation. AVL::rebalance(Node*) called privately, which then calls
- * Node::updateHeight(), AVL::rotateLeft(Node*) and AVL::rotateRight(Node*) recursively as needed.
+ * AVL::rotateLeft(Node*) and AVL::rotateRight(Node*) as needed.
  */
-
-void AVL::rebalance(Node* &_this_node)
+void AVL::rebalance(Node* &_local_root)
 {
-	if(_this_node->getBalance() > 1) // right heavy
+	// Recalculate _local_root's height
+	// make sure that any nodes not being checked for rebalancing call this directly
+	_local_root->recalcHeight();
+
+	// If the upper (right) half of this local tree is heavyier, rotate the tree to the left
+	if(_local_root->getBalance() > 1)
 	{
-		if(_this_node->right->getBalance() < 0) //right-left heavy
-			rotateRight(_this_node->right);
-		rotateLeft(_this_node);
+		// If the right half of tree is skewed inward, rotate it out first to avoid repetitive rotation
+		if(_local_root->right_child->getBalance() < 0)
+			rotateRight(_local_root->right_child);
+
+		rotateLeft(_local_root);
 	}
 
-	if(_this_node->getBalance() < -1) // left heavy
+	// If the lower (left) half of this local tree is heavyier, rotate the tree to the right
+	if(_local_root->getBalance() < -1)
 	{
-		if(_this_node->left->getBalance() > 0) //left-right heavy
-			rotateLeft(_this_node->left);
-		rotateRight(_this_node);
+		// If the left half of tree is skewed inward, rotate it out first to avoid repetitive rotation
+		if(_local_root->left_child->getBalance() > 0)
+			rotateLeft(_local_root->left_child);
+
+		rotateRight(_local_root);
 	}
 }
 
-void AVL::rotateLeft(Node* &_this_node)
+void AVL::rotateLeft(Node* &_local_root)
 {
-	Node* center_node = _this_node->right->left;
-	_this_node->right->left = _this_node;
-	_this_node = _this_node->right;
-	_this_node->left->right = center_node;
+	// One of the new_root's nodes is going to get swapped around. Save it in the meantime.
+	Node* center_node = _local_root->right_child->left_child;
 
-	_this_node->left->recalculateHeight();
-	_this_node->recalculateHeight();
+	// Re-hook up the old root, new root, and center node
+	_local_root->right_child->left_child = _local_root;
+	_local_root = _local_root->right_child;
+	_local_root->left_child->right_child = center_node;
+
+	// Recalculate both the old and new roots' heights
+	_local_root->left_child->recalcHeight();
+	_local_root->recalcHeight();
 }
 
-void AVL::rotateRight(Node* &_this_node)
+void AVL::rotateRight(Node* &_local_root)
 {
-	Node* center_node = _this_node->left->right;
-	_this_node->left->right = _this_node;
-	_this_node = _this_node->left;
-	_this_node->right->left = center_node;
+	// One of the new_root's nodes is going to get swapped around. Save it in the meantime.
+	Node* center_node = _local_root->left_child->right_child;
 
-	_this_node->right->recalculateHeight();
-	_this_node->recalculateHeight();
+	// Re-hook up the old root, new root, and center node
+	_local_root->left_child->right_child = _local_root;
+	_local_root = _local_root->left_child;
+	_local_root->right_child->left_child = center_node;
+
+	// Recalculate both the old and new roots' heights
+	_local_root->right_child->recalcHeight();
+	_local_root->recalcHeight();
 }
 
 /*
  * AVL::add() implementation. AVL::add(int) called publicly, which calls AVL::add(int, Node*) recursively
  */
-
 bool AVL::add(int _data)
 {
+	// Early end condition - empty tree
 	if(root == nullptr)
 	{
 		root = new Node(_data);
 		return true;
 	}
 
+	// Start recursion
 	return add(_data, root);
 }
 
-bool AVL::add(int _data, Node* &_this_node)
+bool AVL::add(const int &_data, Node* &_local_root)
 {
-	if(_data == _this_node->data)
+	// End condition - duplicate value
+	if(_data == _local_root->data)
 		return false;
 
-	if(_data < _this_node->data)
-	{
-		if(_this_node->left != nullptr)
-		{
-			// recursively call add on its left. If returns true, rebalance this node.
-			if(add(_data, _this_node->left))
-			{
-				_this_node->recalculateHeight();
-				rebalance(_this_node);
-				return true;
-			}
-			else
-			{
-				return false;
-			}
-		}
+	// Select left or right child by comparing _data to _local_root's
+	Node* &_next_node = (_data < _local_root->data) ? _local_root->left_child : _local_root->right_child;
 
-		_this_node->left = new Node(_data);
-		_this_node->recalculateHeight();
+	// End condition - value not found, adding
+	if(_next_node == nullptr)
+	{
+		_next_node = new Node(_data);
+		_local_root->recalcHeight();
+		return true;
 	}
-	else
+
+	// Recursive return. Calls rebalance(_local_root) if returning true
+	if(add(_data, _next_node))
 	{
-		if(_this_node->right != nullptr)
-		{
-			// recursively call add on its right. If returns true, rebalance this node.
-			if(add(_data, _this_node->right))
-			{
-				_this_node->recalculateHeight();
-				rebalance(_this_node);
-				return true;
-			}
-			else
-			{
-				return false;
-			}
-		}
-
-		_this_node->right = new Node(_data);
-		_this_node->recalculateHeight();
-		}
-
-	return true;
+		rebalance(_local_root);
+		return true;
+	}
+	return false;
 }
 
 /*
  * AVL::remove() implementation. AVL::remove(int) called publicly, which calls AVL::remove(int, Node*)
- * recursively to find the right node, which it removes with a recursive AVL::replaceWithPreceding(Node*,Node*)
- * (if needed) followed by a single AVL::remove(Node*) call
+ * recursively to find the right node, which if found is removed with a recursive
+ * AVL::replaceWithPreceding(Node*,Node*) (if needed) followed by a single AVL::remove(Node*) call
  */
-
-bool AVL::remove(int _data, Node* &_this_node)
+bool AVL::remove(const int &_data, Node* &_local_root)
 {
-	if(_this_node == nullptr)
+	// End condition - value not found
+	if(_local_root == nullptr)
 		return false;
 
-	if(_data < _this_node->data)
+	// End condition - value found, removing
+	if(_data == _local_root->data)
 	{
-		if(remove(_data, _this_node->left))
-		{
-			_this_node->recalculateHeight();
-			rebalance(_this_node);
-			return true;
+		if((_local_root->right_child != nullptr) && (_local_root->left_child != nullptr))
+		{ // This deals with nodes that have two child nodes
+			replaceWithPreceding(_local_root, _local_root->left_child);
+			rebalance(_local_root);
 		}
 		else
-		{
-			return false;
+		{ // This deals with nodes that have at most one child node
+			remove(_local_root);
 		}
-	}
-	if(_data > _this_node->data)
-	{
-		if(remove(_data, _this_node->right))
-		{
-			_this_node->recalculateHeight();
-			rebalance(_this_node);
-			return true;
-		}
-		else
-		{
-			return false;
-		}
+
+		return true;
 	}
 
-	if(_this_node->right != nullptr && _this_node->left != nullptr)
+	// Recursion called with right or left child as determined by an inline conditional
+	if(remove(_data, (_data < _local_root->data) ? _local_root->left_child : _local_root->right_child))
 	{
-		replaceWithPreceding(_this_node, _this_node->left);
-		_this_node->recalculateHeight();
-		rebalance(_this_node);
+		rebalance(_local_root);
+		return true;
 	}
-	else
-		remove(_this_node);
-
-	return true;
+	return false;
 }
 
 void AVL::remove(Node* &_to_remove)
 {
+	// Save the Node's address
 	Node* temp = _to_remove;
 
-	if(_to_remove->left != nullptr)
-		_to_remove = _to_remove->left;
+	// Relink around the Node
+	if(_to_remove->left_child != nullptr)
+		_to_remove = _to_remove->left_child;
 	else
-		_to_remove = _to_remove->right;
+		_to_remove = _to_remove->right_child;
 
+	// Delete the now-unlnked Node
 	delete temp;
 }
 
-void AVL::replaceWithPreceding(Node* &_to_remove, Node* &_replacement)
+void AVL::replaceWithPreceding(Node* &_to_replace, Node* &_to_remove)
 {
-	if(_replacement->right == nullptr)
+	// End condition - _to_remove holds the value immediately preceding _to_replace
+	if(_to_remove->right_child == nullptr)
 	{
-		_to_remove->data = _replacement->data;
-		remove(_replacement);
+		// Transfer data and remove the now redundant node
+		_to_replace->data = _to_remove->data;
+		remove(_to_remove);
+		return;
 	}
-	else
-	{
-		replaceWithPreceding(_to_remove, _replacement->right);
-		_replacement->recalculateHeight();
-		rebalance(_replacement);
-	}
+
+	// Recursion
+	replaceWithPreceding(_to_replace, _to_remove->right_child);
+	rebalance(_to_remove);
 }
 
-void AVL::clear(Node* &_this_node)
+void AVL::clear(Node* &_local_root)
 {
-	if(_this_node == nullptr)
+	// End condition
+	if(_local_root == nullptr)
 		return;
 
-	clear(_this_node->right);
-	clear(_this_node->left);
+	// Recursion
+	clear(_local_root->right_child);
+	clear(_local_root->left_child);
 
-	delete _this_node;
-	_this_node = nullptr;
+	// Deletion
+	delete _local_root;
+	_local_root = nullptr;
 }

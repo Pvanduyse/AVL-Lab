@@ -1,8 +1,8 @@
 #pragma once
+
 using namespace std;
 
 #include "NodeInterface.h"
-#include <iostream>
 
 class Node : public NodeInterface
 {
@@ -10,25 +10,21 @@ private:
 	int data;
 	int height = 1;
 
-	Node* left = nullptr;
-	Node* right = nullptr;
+	Node* left_child = nullptr;
+	Node* right_child = nullptr;
 
-	int getLeftHeight() const;
-
-	int getRightHeight() const;
+	int getHeight(const Node* _child) const;
 
 	int getBalance() const;
-
-	void recalculateHeight();
+	void recalcHeight();
 public:
 	Node(int _data) : data(_data) {}
 	~Node() {}
 
 	int getData() const { return data; }
 
-	Node* getLeftChild() const { return left; }
-
-	Node* getRightChild() const { return right; }
+	Node* getLeftChild() const { return left_child; }
+	Node* getRightChild() const { return right_child; }
 
 	int getHeight() { return height; }
 

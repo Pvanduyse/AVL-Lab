@@ -1,24 +1,19 @@
 #include "Node.h"
 
-int Node::getLeftHeight() const
+int Node::getHeight(const Node* _child) const
 {
-	return (left != nullptr) ? left->height : 0;
-}
-
-int Node::getRightHeight() const
-{
-	return (right != nullptr) ? right->height : 0;
+	return (_child != nullptr) ? _child->height : 0;
 }
 
 int Node::getBalance() const
 {
-	return getRightHeight() - getLeftHeight();
+	return getHeight(right_child) - getHeight(left_child);
 }
 
-void Node::recalculateHeight()
+void Node::recalcHeight()
 {
-	if(getLeftHeight() > getRightHeight())
-		height = getLeftHeight() + 1;
+	if(getHeight(left_child) > getHeight(right_child))
+		height = getHeight(left_child) + 1;
 	else
-		height = getRightHeight() + 1;
+		height = getHeight(right_child) + 1;
 }

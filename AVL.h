@@ -8,34 +8,26 @@ using namespace std;
 class AVL : public AVLInterface
 {
 private:
-	int DEBUG_ADD = 0;
-	int DEBUG_REMOVE = 0;
-	int DEBUG_REBALANCE = 0;
-	int DEBUG_REBALANCE_ACTIVE = 0;
 	Node* root = nullptr;
 
-	void rebalance(Node* &_this_node);
+	void rebalance(Node* &_local_root);
+	void rotateLeft(Node* &_local_root);
+	void rotateRight(Node* &_local_root);
 
-	void rotateLeft(Node* &_this_node);
+	bool add(const int &_data, Node* &_local_root);
 
-	void rotateRight(Node* &_this_node);
-
-	bool add(int _data, Node* &_this_node);
-
-	bool remove(int _data, Node* &_this_node);
-
+	bool remove(const int &_data, Node* &_local_root);
 	void remove(Node* &_to_remove);
+	void replaceWithPreceding(Node* &_to_replace, Node* &_to_remove);
 
-	void replaceWithPreceding(Node* &_to_remove, Node* &_replacement);
-
-	void clear(Node* &_this_node);
+	void clear(Node* &_local_root);
 public:
 	AVL() {}
 	~AVL() { clear(); }
 
-	bool add(int _data);
-
 	Node* getRootNode() const { return root; }
+
+	bool add(int _data);
 
 	bool remove(int _data) { return remove(_data, root); }
 
