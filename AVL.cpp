@@ -64,42 +64,26 @@ void AVL::rotateRight(Node* &_local_root)
 /*
  * AVL::add() implementation. AVL::add(int) called publicly, which calls AVL::add(int, Node*) recursively
  */
-bool AVL::add(int _data)
+bool AVL::add(const int &_data, Node* &_local_root)
 {
-	// Early end condition - empty tree
-	if(root == nullptr)
+	// End condition - value not found, adding
+	if(_local_root == nullptr)
 	{
-		root = new Node(_data);
+		_local_root = new Node(_data);
 		return true;
 	}
 
-	// Start recursion
-	return add(_data, root);
-}
-
-bool AVL::add(const int &_data, Node* &_local_root)
-{
 	// End condition - duplicate value
 	if(_data == _local_root->data)
 		return false;
 
-	// Select left or right child by comparing _data to _local_root's
-	Node* &_next_node = (_data < _local_root->data) ? _local_root->left_child : _local_root->right_child;
-
-	// End condition - value not found, adding
-	if(_next_node == nullptr)
-	{
-		_next_node = new Node(_data);
-		_local_root->recalcHeight();
-		return true;
-	}
-
 	// Recursive return. Calls rebalance(_local_root) if returning true
-	if(add(_data, _next_node))
+	if(add(_data, (_data < _local_root->data) ? _local_root->left_child : _local_root->right_child))
 	{
 		rebalance(_local_root);
 		return true;
 	}
+
 	return false;
 }
 
@@ -123,8 +107,10 @@ bool AVL::remove(const int &_data, Node* &_local_root)
 			rebalance(_local_root);
 		}
 		else
-		{ // This deals with nodes that have at most one child node
-			remove(_local_root);
+		{ // This deals with nodes that have at most one child nodes, just save, relink, and delete
+			Node* temp = _local_root;
+			_local_root = (_local_root->left_child != nullptr) ? _local_root->left_child : _local_root->right_child;
+			delete temp;
 		}
 
 		return true;
@@ -136,22 +122,8 @@ bool AVL::remove(const int &_data, Node* &_local_root)
 		rebalance(_local_root);
 		return true;
 	}
+
 	return false;
-}
-
-void AVL::remove(Node* &_to_remove)
-{
-	// Save the Node's address
-	Node* temp = _to_remove;
-
-	// Relink around the Node
-	if(_to_remove->left_child != nullptr)
-		_to_remove = _to_remove->left_child;
-	else
-		_to_remove = _to_remove->right_child;
-
-	// Delete the now-unlnked Node
-	delete temp;
 }
 
 void AVL::replaceWithPreceding(Node* &_to_replace, Node* &_to_remove)
@@ -161,7 +133,9 @@ void AVL::replaceWithPreceding(Node* &_to_replace, Node* &_to_remove)
 	{
 		// Transfer data and remove the now redundant node
 		_to_replace->data = _to_remove->data;
-		remove(_to_remove);
+		Node* temp = _to_remove;
+		_to_remove = _to_remove->left_child;
+		delete temp;
 		return;
 	}
 

@@ -17,7 +17,6 @@ private:
 	bool add(const int &_data, Node* &_local_root);
 
 	bool remove(const int &_data, Node* &_local_root);
-	void remove(Node* &_to_remove);
 	void replaceWithPreceding(Node* &_to_replace, Node* &_to_remove);
 
 	void clear(Node* &_local_root);
@@ -27,7 +26,7 @@ public:
 
 	Node* getRootNode() const { return root; }
 
-	bool add(int _data);
+	bool add(int _data) { return add(_data, root); }
 
 	bool remove(int _data) { return remove(_data, root); }
 
