@@ -13,13 +13,22 @@ private:
 	Node* left_child = nullptr;
 	Node* right_child = nullptr;
 
-	int getHeight(const Node* _child) const;
-
-	int getBalance() const;
+	static int getHeight(const Node* _this_node);
 	void recalcHeight();
+
+	void rebalance();
+	void rotateLeft();
+	void rotateRight();
+
+	static void remove(Node*& _this_node);
+	void replaceWithRightmostOf(Node* &_to_remove);
 public:
 	Node(int _data) : data(_data) {}
-	~Node() {}
+	~Node();
+
+	bool add(const int &data);
+
+	int remove(const int &_data); // -1 if node deleted, 0 if not found, 1 if removed
 
 	int getData() const { return data; }
 
@@ -27,6 +36,4 @@ public:
 	Node* getRightChild() const { return right_child; }
 
 	int getHeight() { return height; }
-
-	friend class AVL;
 };
